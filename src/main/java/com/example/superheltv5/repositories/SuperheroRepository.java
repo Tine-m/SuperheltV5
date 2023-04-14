@@ -1,5 +1,7 @@
 package com.example.superheltv5.repositories;
 
+import com.example.superheltv5.models.City;
+import com.example.superheltv5.models.SuperPower;
 import com.example.superheltv5.models.Superhero;
 import com.example.superheltv5.repositories.util.ConnectionManager;
 import com.example.superheltv5.services.SuperheroException;
@@ -13,68 +15,25 @@ import java.util.List;
 public class SuperheroRepository implements ISuperheroRepository {
 
   @Override
-  public List<Superhero> getAll() {
-    return null;
-  }
-
-  /* @Value("${spring.datasource.url}")
-    private String url;
-
-    @Value("${spring.datasource.username}")
-    private String user;
-
-    @Value("${spring.datasource.password}")
-    private String password;
-
-    public SuperheroRepository() {}
-
-    public List<Superhero> getAll() {
-      List<Superhero> superheroList = new ArrayList<>();
-
-      try (Connection conn = DriverManager.getConnection(url, user, password)) {
-        System.out.println("Connection object without singleton: " + conn);
-        String SQL = "select hero_id, hero_name, real_name, creation_year from superhero order by hero_name;";
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(SQL);
-
-        while (rs.next()) {
-          // table columns retrieved by name
-          int heroId = rs.getInt("hero_id");
-          String heroName = rs.getString("hero_name");
-          String realName = rs.getString("real_name");
-          int creationYear = rs.getInt("creation_year");
-          superheroList.add(new Superhero(heroId, heroName, realName, creationYear));
-        }
-        return superheroList; //TODO align error handling in repo classes
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  */
-  public List<Superhero> getAll2() throws SuperheroException {
+  public List<Superhero> getAll() throws SuperheroException {
     List<Superhero> superheroList = new ArrayList<>();
 
     try {
       // All information and work related to database connection is in ConnectionManager
       Connection conn = ConnectionManager.getConnection();
-      // Test output
-      System.out.println("Connection object with singleton: " + conn);
-
       String SQL = "SELECT * from superhero";
       Statement stmt = conn.createStatement();
       ResultSet resultSet = stmt.executeQuery(SQL);
 
-      while (resultSet.next()){
+      while (resultSet.next()) {
         // table columns retrieved by position
         int id = resultSet.getInt(1);
         String heroName = resultSet.getString(2);
         String realName = resultSet.getString(3);
         int creationYear = resultSet.getInt(4);
-        superheroList.add(new Superhero(id, heroName, realName, creationYear));
+        superheroList.add(new Superhero(id, heroName, realName, creationYear, null));
       }
-    }
-    catch (SQLException e)
-    {
+    } catch (SQLException e) {
       throw new SuperheroException("Something wrong with query");
     }
     return superheroList;
@@ -83,22 +42,51 @@ public class SuperheroRepository implements ISuperheroRepository {
   public void save(Superhero hero) throws SuperheroException {
     try {
       Connection conn = ConnectionManager.getConnection();
-      String SQL = "INSERT INTO superhero (HERO_NAME, REAL_NAME, CREATION_YEAR) " +
-          "VALUES (?, ?, ?)";
-      PreparedStatement pstmt = conn.prepareStatement(SQL, Statement.RETURN_GENERATED_KEYS);
-      //indsæt name og price i prepared statement
-      pstmt.setString(1, hero.getHeroName());
-      pstmt.setString(2, hero.getRealName());
-      pstmt.setInt(3,hero.getCreationYear());
+      // vi gemmer alt eller intet som "unit of work/business transaction"
+      conn.setAutoCommit(false);
 
-      //execute query
-      pstmt.executeUpdate();
-      ResultSet rs = pstmt.getGeneratedKeys();
+      //  Find ID for den valgte by
+      // TODO - evt. have liste af byer liggende i memory
+      City heroCity = hero.getCity();
+      String SQLCityID = "SELECT CITY_ID FROM CITY WHERE NAME = ?";
+      PreparedStatement pstmt = conn.prepareStatement(SQLCityID);
+      pstmt.setString(1, hero.getCity().getCityName());
+      ResultSet rs = pstmt.executeQuery(); //søg efter City
       if (rs.next()) {
-        hero.setHeroId(rs.getInt(1));
-        System.out.println("Test new PK " + hero.getHeroId());
+        heroCity.setCityID(rs.getInt(1));
+        //System.out.println("city id " + hero.getCity().getCityID());
       }
 
+      // Indsæt ny superhelt
+      String SQL = "INSERT INTO superhero (HERO_NAME, REAL_NAME, CREATION_YEAR, CITY_ID) " +
+          "VALUES (?, ?, ?, ?)";
+      // Vi har brug for ny Super hero ID, så vi kan oprette super powers bagefter
+      pstmt = conn.prepareStatement(SQL, Statement.RETURN_GENERATED_KEYS);
+      pstmt.setString(1, hero.getHeroName());
+      pstmt.setString(2, hero.getRealName());
+      pstmt.setInt(3, hero.getCreationYear());
+      pstmt.setInt(4, hero.getCity().getCityID());
+
+      pstmt.executeUpdate(); // insert superhero
+      rs = pstmt.getGeneratedKeys(); // få fat i det nye ID
+      if (rs.next()) {
+        hero.setHeroId(rs.getInt(1));
+        //System.out.println("Test new PK " + hero.getHeroId());
+      }
+
+      //Indsæt super powers på den nye superhelt
+      int heroID = hero.getHeroId();
+      String SQL2 = "INSERT INTO superhero_powers (HERO_ID, POWER_ID) " +
+          "VALUES (?, ?)";
+      PreparedStatement pstmt2 = conn.prepareStatement(SQL2);
+      pstmt2.setInt(1, heroID);
+      //Find superpower ID i DB
+      // TODO - evt. have liste af powers liggende i memory
+      for (String powerName : hero.getSuperPowers()) {
+        pstmt2.setInt(2, getPower(powerName).getID()); //simulering af power id's
+        pstmt2.executeUpdate(); // insert superhero power
+      }
+      conn.commit();
     } catch (SQLException e) {
       throw new SuperheroException(e.getMessage());
     }
@@ -106,29 +94,59 @@ public class SuperheroRepository implements ISuperheroRepository {
 
   @Override
   public void saveall(List<Superhero> superheroes) throws SuperheroException {
-    for (Superhero hero: superheroes) {
+    for (Superhero hero : superheroes) {
       save(hero);
     }
   }
 
-  /*public Superhero getSuperheroByName(String heroName) {
-    try (Connection conn = DriverManager.getConnection(url, user, password)) {
-      String SQL = "select hero_id, hero_name, real_name, creation_year from superhero where hero_name = ?";
-      PreparedStatement pstmt = conn.prepareStatement(SQL);
-      pstmt.setString(1, heroName);
-      ResultSet rs = pstmt.executeQuery();
-      if (rs.next()) {
-        int hero_id = rs.getInt("hero_id");
-        String hero_name = rs.getString("hero_name");
-        String real_name = rs.getString("real_name");
-        int creation_year = rs.getInt("creation_year");
-        return new Superhero(hero_id, hero_name, real_name, creation_year);
+  @Override
+  public List<String> getCities() throws SuperheroException {
+    List<String> cities = new ArrayList<>();
+    try {
+      Connection con = ConnectionManager.getConnection();
+      String query = "SELECT name FROM CITY";
+      PreparedStatement ps = con.prepareStatement(query);
+      ResultSet rs = ps.executeQuery();
+      while (rs.next()) {
+        cities.add(rs.getString(1));
       }
-      //else return null;
-      else return new Superhero(0, "N/A","N/A",0); //TODO change to null
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new SuperheroException(e.getMessage());
     }
-  }*/
+    return cities;
+  }
+
+  public List<String> getPowers() throws SuperheroException {
+    List<String> powers = new ArrayList<>();
+    try {
+      Connection con = ConnectionManager.getConnection();
+      String query = "SELECT name FROM SUPERPOWER";
+      PreparedStatement ps = con.prepareStatement(query);
+      ResultSet rs = ps.executeQuery();
+      while (rs.next()) {
+        powers.add(rs.getString(1));
+      }
+    } catch (SQLException e) {
+      throw new SuperheroException(e.getMessage());
+    }
+    return powers;
+  }
+
+  private SuperPower getPower(String powerName) throws SuperheroException {
+    try {
+      Connection con = ConnectionManager.getConnection();
+      String SQL = "SELECT * FROM SUPERPOWER WHERE NAME = ?";
+      PreparedStatement ps = con.prepareStatement(SQL);
+      ps.setString(1, powerName);
+      ResultSet rs = ps.executeQuery();
+      if (rs.next()) {
+        return new SuperPower(rs.getInt(1), rs.getString(2));
+      }
+    } catch (SQLException e) {
+      throw new SuperheroException(e.getMessage());
+    }
+    return null;
+  }
+
 
 }

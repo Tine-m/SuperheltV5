@@ -7,8 +7,11 @@ import java.util.List;
 
 public interface ISuperheroRepository {
 
-  public List<Superhero> getAll();
-  public List<Superhero> getAll2() throws SuperheroException;
+  public List<Superhero> getAll() throws SuperheroException;
   public void save(Superhero hero) throws SuperheroException;
   void saveall(List<Superhero> superheroes) throws SuperheroException;
+
+  public List<String> getCities() throws SuperheroException;
+
+  public List<String> getPowers() throws SuperheroException;
 }

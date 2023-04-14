@@ -21,56 +21,49 @@ public class SuperheroController {
   }
 
   @RequestMapping("/all")
-  public String getAll(Model model) {
+  public String getAll(Model model) throws SuperheroException {
     List<Superhero> heroList = service.getAll();
     model.addAttribute("result", heroList);
     return "list";
   }
 
-  @RequestMapping("/all2")
-  public String getAll2(Model model) throws SuperheroException {
-    List<Superhero> heroList = service.getAll2();
-    model.addAttribute("result", heroList);
-    return "list";
-  }
-
   @GetMapping("/create")
-  public String showForm(Model model) {
-    //create new empty Person object
-    model.addAttribute("hero", new Superhero());
+  public String showForm(Model model) throws SuperheroException {
+    Superhero hero = new Superhero();
+    model.addAttribute("hero", hero);
+    List<String> cities = service.getCities();
+    List<String> powers = service.getPowers();
+    model.addAttribute("cities", cities);
+    model.addAttribute("powers", powers);
     return "createHeroForm";
   }
 
   @PostMapping("/save")
-  public String heroSave(@ModelAttribute Superhero hero, Model model) throws SuperheroException {
+  public String heroSave(@ModelAttribute ("hero") Superhero hero, Model model) throws SuperheroException {
     //save populated Superhero object in database
     service.save(hero);
-
-    //find hero again in database and show updated list
-    List<Superhero> heroList = service.getAll2();
+    //find hero again in database and show updated list with all heroes
+    List<Superhero> heroList = service.getAll();
     model.addAttribute("result", heroList);
     return "list";
   }
 
   @GetMapping("/create2")
-  public String showCreateForm(Model model) {
+  public String showForm2(Model model) {
+    //Virker ikke pga. mgl.by og super powers som forventes i repo
     SuperheroesCreationDto heroesForm = new SuperheroesCreationDto();
-
     for (int i = 1; i <= 3; i++) {
       heroesForm.addHero(new Superhero());
     }
-
     model.addAttribute("form", heroesForm);
     return "createHeroForm2";
   }
 
   @PostMapping("/save2")
   public String saveHeroes(@ModelAttribute SuperheroesCreationDto form, Model model) throws SuperheroException {
-    System.out.println(form.getSuperheroes().size());
     service.saveAll(form.getSuperheroes());
-    model.addAttribute("result", service.getAll2());
-    //return "redirect:/books/all";
-    return "redirect:/superhero/all2";
+    model.addAttribute("result", service.getAll());
+    return "redirect:/superhero/all";
   }
 
   // Thymeleaf template is used to display error message

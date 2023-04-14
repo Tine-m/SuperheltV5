@@ -17,12 +17,8 @@ public class SuperheroService {
     repository = (ISuperheroRepository) context.getBean(impl);
   }
 
-  public List<Superhero> getAll() {
+  public List<Superhero> getAll() throws SuperheroException {
     return repository.getAll();
-  }
-
-  public List<Superhero> getAll2() throws SuperheroException {
-    return repository.getAll2();
   }
 
   public void save(Superhero hero) throws SuperheroException {
@@ -31,5 +27,13 @@ public class SuperheroService {
 
   public void saveAll(List<Superhero> superheroes) throws SuperheroException {
     repository.saveall(superheroes);
+  }
+
+  public List<String> getCities() throws SuperheroException {
+    return repository.getCities();
+  }
+
+  public List<String> getPowers() throws SuperheroException {
+    return repository.getPowers();
   }
 }

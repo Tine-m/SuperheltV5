@@ -1,25 +1,28 @@
 package com.example.superheltv5.models;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Superhero {
   private int heroId;
   private String heroName;
   private String realName;
   private int creationYear;
+  private City city;
+  private List<String> superPowers;
+  //private SuperPowerDTO superpowerDTO; //TODO prøv med power objekter
 
   public Superhero() {
+    this.city = null;
+    superPowers = new ArrayList<>();
   }
 
-  public Superhero(String heroName, String realName, int creationYear) {
-    this.heroName = heroName;
-    this.realName = realName;
-    this.creationYear = creationYear;
-  }
-
-  public Superhero(int heroId, String heroName, String realName, int creationYear) {
+  public Superhero(int heroId, String heroName, String realName, int creationYear, List<String> superPowers) {
     this.heroId = heroId;
     this.heroName = heroName;
     this.realName = realName;
     this.creationYear = creationYear;
+    this.superPowers = superPowers;
   }
 
   public int getHeroId() {
@@ -52,6 +55,22 @@ public class Superhero {
 
   public void setCreationYear(int creationYear) {
     this.creationYear = creationYear;
+  }
+
+  public void setCity(City city) {
+    this.city = city;
+  }
+
+  public City getCity() {
+    return city;
+  }
+
+  public List<String> getSuperPowers() {
+    return superPowers;
+  }
+
+  public void setSuperPowers(List<String> superPowers) {
+    this.superPowers = superPowers;
   }
 }
 

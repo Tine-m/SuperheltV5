@@ -2,7 +2,6 @@ package com.example.superheltv5.repositories;
 
 import com.example.superheltv5.models.Superhero;
 import com.example.superheltv5.services.SuperheroException;
-import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -14,19 +13,14 @@ public class SuperheroRepositoryStub implements ISuperheroRepository {
   private List<Superhero> stubDatabase = new ArrayList<>();
 
   public SuperheroRepositoryStub() {
-   Superhero hero1 = new Superhero(1, "Tarzan", "Lord Greystoke", 1912);
+   Superhero hero1 = new Superhero(1, "Tarzan", "Lord Greystoke", 1912, null);
     stubDatabase.add(hero1);
-    Superhero hero2 = new Superhero(2, "Spider-man", "Peter Parker", 1962);
+    Superhero hero2 = new Superhero(2, "Spider-man", "Peter Parker", 1962, null);
     stubDatabase.add(hero2);
   }
 
   @Override
   public List<Superhero> getAll() {
-    return stubDatabase;
-  }
-
-  @Override
-  public List<Superhero> getAll2() throws SuperheroException {
     return stubDatabase;
   }
 
@@ -40,5 +34,15 @@ public class SuperheroRepositoryStub implements ISuperheroRepository {
     for (Superhero hero: superheroes) {
       stubDatabase.add(hero);
     }
+  }
+
+  @Override
+  public List<String> getCities() throws SuperheroException {
+    return null;
+  }
+
+  @Override
+  public List<String> getPowers() throws SuperheroException {
+    return null;
   }
 }
