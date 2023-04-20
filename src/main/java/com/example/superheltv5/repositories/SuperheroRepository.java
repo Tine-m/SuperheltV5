@@ -54,7 +54,6 @@ public class SuperheroRepository implements ISuperheroRepository {
       ResultSet rs = pstmt.executeQuery(); //søg efter City
       if (rs.next()) {
         heroCity.setCityID(rs.getInt(1));
-        //System.out.println("city id " + hero.getCity().getCityID());
       }
 
       // Indsæt ny superhelt
@@ -71,7 +70,6 @@ public class SuperheroRepository implements ISuperheroRepository {
       rs = pstmt.getGeneratedKeys(); // få fat i det nye ID
       if (rs.next()) {
         hero.setHeroId(rs.getInt(1));
-        //System.out.println("Test new PK " + hero.getHeroId());
       }
 
       //Indsæt super powers på den nye superhelt
@@ -83,7 +81,7 @@ public class SuperheroRepository implements ISuperheroRepository {
       //Find superpower ID i DB
       // TODO - evt. have liste af powers liggende i memory
       for (String powerName : hero.getSuperPowers()) {
-        pstmt2.setInt(2, getPower(powerName).getID()); //simulering af power id's
+        pstmt2.setInt(2, getPower(powerName).getID());
         pstmt2.executeUpdate(); // insert superhero power
       }
       conn.commit();
